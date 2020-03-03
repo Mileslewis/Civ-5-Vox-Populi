@@ -9,7 +9,8 @@
 - Bobert13						- Bug fixes and optimizations
 - Thalassicus (Victor Isbell)	- Ocean rifts, rivers through lakes, natural wonder placement,
 								  resource placement, map options, inland seas, aesthetic polishing
-
+- Milae	(Miles)			- Major changes: Rainfall, Terrain and features reworked.
+				- Minor changes: resources, tweaking on almost all variables and removed many features designed to reduce randomness.
 
 This map script generates climate based on a simplified model of geostrophic
 and monsoon wind patterns. Rivers are generated along accurate drainage paths
