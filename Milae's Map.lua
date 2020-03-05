@@ -10,7 +10,7 @@
 - Thalassicus (Victor Isbell)	- Ocean rifts, rivers through lakes, natural wonder placement,
 								  resource placement, map options, inland seas, aesthetic polishing
 - Milae	(Miles)			- Major changes: Rainfall, Terrain and features reworked.
-				- Minor changes: resources, tweaking on almost all variables and removed many features designed to reduce randomness.
+				- Minor changes: resources, tweaking on almost all variables, removed many features designed to reduce randomness and added extra explainations.
 
 This map script generates climate based on a simplified model of geostrophic
 and monsoon wind patterns. Rivers are generated along accurate drainage paths
@@ -85,7 +85,7 @@ function MapGlobals:New()
 	mglobal.landMaxScatter			= 0.20	--Recommended range:[0.03 to 0.3]	--and very high values result in a lot of stringy continents and islands.
 											
 											
-	mglobal.coastScatter			= 0.12 	--Recommended range:[0.01 to 0.3]
+	mglobal.coastScatter			= 0.09 	--Recommended range:[0.01 to 0.3]
 						--Higher values result in more islands and variance on landmasses and coastlines.
 											
 	mglobal.mountainScatter			= 180 * mapW --Recommended range:[130 to 1000]
@@ -94,10 +94,10 @@ function MapGlobals:New()
 	
 	-- Terrain
 	mglobal.mountainWeight			= 0.7  	--Weight of the mountain elevation map versus the coastline elevation map.
-	mglobal.belowMountainPercent		= 0.94	-- Percent of non-mountain land
+	mglobal.belowMountainPercent		= 0.95	-- Percent of non-mountain land
 										   -- flatPercent to belowMountainPercent : hills
-	mglobal.flatPercent			= 0.78 	-- Percent of flat land
-	mglobal.hillsBlendPercent		= 0.40 	-- Chance for flat land to become hills per near mountain. Requires at least 2 near mountains.
+	mglobal.flatPercent			= 0.79 	-- Percent of flat land
+	mglobal.hillsBlendPercent		= 0.38 	-- Chance for flat land to become hills per near mountain. Requires at least 2 near mountains.
 	mglobal.terrainBlendRange		= 4	-- range to smooth terrain (desert surrounded by plains turns to plains, etc)
 	mglobal.terrainBlendRandom		= 0.4  	-- random modifier for terrain smoothing
 
@@ -110,13 +110,13 @@ function MapGlobals:New()
 	
 	
 	-- Rain
-	mglobal.marshPercent		= 0.08 	-- Percent chance increase for marsh from each nearby watery tile 
-	mglobal.junglePercent		= 0.11 	--  Percent chance for jungle in valid location (increase with neighbours and wetness)
-	mglobal.forestPercent		= 0.1	 -- zeroTreesPercent to 1 : forest
-	mglobal.forestTundraPercent	= 0.35 	-- Extra Percent chance for forest on tundra
+	mglobal.marshPercent		= 0.06 	-- Percent chance increase for marsh from each nearby watery tile 
+	mglobal.junglePercent		= 0.065 	--  Percent chance for jungle in valid location (increase with neighbours and wetness)
+	mglobal.forestPercent		= 0.085	-- Percent chance for forest in valid location (in temperate, medium wetness regions)
+	mglobal.forestTundraPercent	= 0.32 	-- Extra Percent chance for forest on tundra
 	mglobal.featureIterations	= 3	-- Number of times all plots are checked to add features (higher means more clumping)
-	mglobal.clumpingModifier	= 1	-- higher means features are more likely next to similar features ( 0 means no extra chance)
-
+	mglobal.clumpingModifier	= 1.5	-- higher means features are more likely next to similar features ( 0 means no extra chance)
+		-- divide by number of iterations to reach the same overall chance
 	mglobal.marshPercent		= mglobal.marshPercent 		/ mglobal.featureIterations
 	mglobal.junglePercent		= mglobal.junglePercent 	/ mglobal.featureIterations
 	mglobal.forestPercent		= mglobal.forestPercent 	/ mglobal.featureIterations
@@ -126,16 +126,17 @@ function MapGlobals:New()
 
 
 										  							  
-	mglobal.grassPercent	        = 0.8	--	> grassPercent : very wet
-	mglobal.plainsPercent		= 0.60 	-- 	 desertPercent to plainsPercent : plains. 	> plainsPercent : grass
-	mglobal.desertPercent		= 0.30 	--	< desertPercent : desert
+	mglobal.grassPercent	        = 0.8	--	> grassPercent: very wet (more jungle/marsh, less forest)
+						-- 	> plainsPercent: grass	
+	mglobal.plainsPercent		= 0.62 	-- 	desertPercent to plainsPercent: plains/tundra 
+	mglobal.desertPercent		= 0.30 	--	< desertPercent : desert if hot enough, plains/tundra/snow if not
 	
 	
 	-- Temperature
-	mglobal.jungleMinTemperature	= 0.72 -- jungle:  jungleMinTemperature	to 1
-	mglobal.desertMinTemperature	= 0.55 -- desert:  desertMinTemperature	to 1
-	mglobal.tundraTemperature	= 0.33 -- tundra: snowTemperature to tundraTemperature
-	mglobal.snowTemperature		= 0.14 -- snow:   0 to snowTemperature
+	mglobal.jungleMinTemperature	= 0.72 -- > jungleMin: increased jungle, less marsh or forests.
+	mglobal.desertMinTemperature	= 0.55 -- > desertMin: desert and jungle 
+	mglobal.tundraTemperature	= 0.33 -- < tundraTemp: tundra
+	mglobal.snowTemperature		= 0.14 -- < snowTemp:   snow
 
 
 	mglobal.forestRandomPercent		= 0.07 -- Percent of barren flatland which randomly gets a forest ( not used )
@@ -147,20 +148,20 @@ function MapGlobals:New()
 	mglobal.riverRainCheatFactor		= 1.2	-- Values greater than one favor watershed size. Values less than one favor actual rain amount.
 	mglobal.minWaterTemp			= 0.15	-- Sets water temperature compression that creates the land/sea seasonal temperature differences that cause monsoon winds.
 	mglobal.maxWaterTemp			= 0.9	-- Maximum = minWaterTemp + maxWaterTemp
-	mglobal.geostrophicFactor		= 3.0	-- Strength of latitude climate versus monsoon climate. 	(not used)
+	mglobal.geostrophicFactor		= 0	-- Strength of latitude climate versus monsoon climate. 	(geostropic being reworked)
 	mglobal.geostrophicLateralWindStrength = 0.6 	-- Percent of geostropic wind which goes in dominant direction 	(not used)
-	mglobal.lakeSize				= 10	-- read-only; cannot change lake sizes with a map script
-	mglobal.oceanMaxWander			= 10		-- number of tiles a rift can randomly wander from its intended path
+	mglobal.lakeSize			= 10	-- read-only; cannot change lake sizes with a map script
+	mglobal.oceanMaxWander			= 10	-- number of tiles a rift can randomly wander from its intended path
 	mglobal.oceanElevationWeight		= 0.31	-- higher numbers make oceans avoid continents
 	mglobal.oceanRiftWidth			= math.max(1, Round(mapW/40)) -- minimum number of ocean tiles in a rift
 	
-											-- percent of map width:
+	-- percent of map width:
 	mglobal.atlanticSize			= 0.1	-- size near poles
-	mglobal.atlanticBulge			= -0.07		-- size increase at equator
+	mglobal.atlanticBulge			= -0.07	-- size increase at equator
 	mglobal.atlanticCurve			= 0.2	-- S-curve distance
-	mglobal.pacificSize				= 0.05		-- size near poles
+	mglobal.pacificSize			= 0.05	-- size near poles
 	mglobal.pacificBulge			= 0.05	-- size increase at equator
-	mglobal.pacificCurve			= 0.2		-- S-curve distance
+	mglobal.pacificCurve			= 0.2	-- S-curve distance
 	
 	
 	mglobal.atlanticSize			= math.min(4, Round(mglobal.atlanticSize * mapW))
@@ -172,7 +173,7 @@ function MapGlobals:New()
 	
 	
 	-- Resources
-	mglobal.fishTargetFertility		= 65	-- fish appear to create this average city fertility
+	mglobal.fishTargetFertility		= 63	-- fish appear to create this average city fertility
 	
 	
 	-- Quality vs Performance
@@ -180,7 +181,7 @@ function MapGlobals:New()
 	-- Try reducing these slightly if you experience crashes on huge maps
 	mglobal.tempBlendMaxRange		= 5 -- range to smooth temperature map
 	mglobal.elevationBlendRange		= 7 -- range to smooth elevation map
-	mglobal.RainfallBlendRange		= 4
+	mglobal.RainfallBlendRange		= 4 -- range to smooth rainfall map (not used)
 	
 	
 	
@@ -214,7 +215,7 @@ function MapGlobals:New()
 		mglobal.landMinScatter		= mglobal.landMinScatter	/ 1.5
 		mglobal.landMaxScatter		= mglobal.landMaxScatter	/ 1.5
 		mglobal.coastScatter		= mglobal.coastScatter		/ 1.5
-		mglobal.mountainScatter		= mglobal.mountainScatter
+		mglobal.mountainScatter		= mglobal.mountainScatter	* 1.5
 	elseif oWorldAge == 3 then
 		print("Map Age:  Old")
 		mglobal.belowMountainPercent	= 1 - (1 - mglobal.belowMountainPercent) / 1.5
@@ -222,7 +223,7 @@ function MapGlobals:New()
 		mglobal.landMinScatter		= mglobal.landMinScatter	* 1.5
 		mglobal.landMaxScatter		= mglobal.landMaxScatter	* 1.3
 		mglobal.coastScatter		= mglobal.coastScatter		* 1.5
-		mglobal.mountainScatter		= mglobal.mountainScatter
+		mglobal.mountainScatter		= mglobal.mountainScatter	/ 1.5
 	else
 		print("Map Age:  Normal")
 	end
@@ -306,7 +307,14 @@ function MapGlobals:New()
 		mglobal.numNaturalWonders		= Round (1.25 * mglobal.numNaturalWonders) -- extra wonders for larger map sizes
 	end
 	
-	local oOceanRift = Map.GetCustomOption(7)
+	oOceanRift = Map.GetCustomOption(7)
+	if oOceanRift == 7 then
+		oOceanRift = 3 + Map.Rand(4, "Communitas random ocean rifts - Lua") 
+		if oOceanRift == 3 then
+			oOceanRift = 1
+		end
+	end
+	mglobal.oceanRiftTypes = oOceanRift
 	local oceans = 2
 	if oOceanRift == 5 then
 		oceans = 1
@@ -315,6 +323,9 @@ function MapGlobals:New()
 	end
 	
 	local oRiftWidth = Map.GetCustomOption(8)
+	if oRiftWidth == 4 then
+		oRiftWidth = 1 + Map.Rand(3, "Communitas random rift width - Lua") 
+	end
 	--mglobal.oceanRiftWidth = mglobal.oceanRiftWidth * mapW	
 	if oRiftWidth == 1 then
 		print("Map Ocean Width: Narrow")
@@ -369,7 +380,7 @@ function MapGlobals:New()
 	mglobal.minimumRainCost		= 0.07	-- minumum percent of moisture which falls as it is passed on
 	mglobal.pickUpModifier		= 0.4	-- percent of rain which falls on land and is picked up again (depends on temperature)
 	mglobal.rainfallMultiplier	= 6	-- amount of moisture dropped per percentage change in pressure
-	mglobal.polarRainBoost		= 0.00
+	mglobal.polarRainBoost		= 0.00	-- additional rainfall at latitudes beyond polarFront
 	
 	--North and south isle latitude limits.
 	mglobal.islesNearIce = false
@@ -538,9 +549,10 @@ function GetMapScriptInfo()
                     "2 Pacific",
                     "2 Random",
                     "1 Random",
-                    "None"
+                    "None",
+		    "Random"
                 },
-                DefaultValue = 1,
+                DefaultValue = 7,
                 SortPriority = 2,
             },
 			{
@@ -548,9 +560,10 @@ function GetMapScriptInfo()
                 Values = {
                     "Narrow",
                     "Normal",
-                    "Wide"
+                    "Wide",
+		    "Random"
                 },
-                DefaultValue = 2,
+                DefaultValue = 4,
                 SortPriority = 3,
             },
 		},
@@ -1016,23 +1029,23 @@ function GeneratePlotTypes()
 
 	-- Elevations
 	
-	elevationMap = GenerateElevationMap(mapW,mapH,true,false)
+	elevationMap = GenerateElevationMap(mapW,mapH,true,false)  -- generate height map for each plot
 	
 	--elevationMap:Save("elevationMap.csv")
 
 	-- Plots
 	print("Generating plot types - CommunitasMap")
-	ShiftMaps()
-	DiffMap = GenerateDiffMap(mapW,mapH,true,false)
-	CreateArcticOceans()
-	CreateVerticalOceans()
-	ConnectSeasToOceans()
-	FillInLakes()
-	elevationMap = SetOceanRiftElevations(elevationMap)	
-	ConnectTerraContinents()
+	ShiftMaps()						-- shift the map so that the edge lines up with where ocean will liely be
+	DiffMap = GenerateDiffMap(mapW,mapH,true,false)		-- map for determining height difference to surrounding plots (for hills and mountains)
+	CreateArcticOceans()					-- create oceans at top and bottom
+	CreateVerticalOceans()					-- create artificial oceans as desired from options (placed at longitudes with lowest height)
+	ConnectSeasToOceans()					-- any inland sea over size 10 (max lake size) will be connected to the rest of the oceans.
+	FillInLakes()						-- inland seas under size 10 are lakes
+	elevationMap = SetOceanRiftElevations(elevationMap)	-- set created oceans as belowSeaLevel
+	ConnectTerraContinents()				-- additional continent if Terra option selected
 	
 	-- Rainfall
-	rainfallMap, temperatureMap = GenerateRainfallMap(elevationMap)
+	rainfallMap, temperatureMap = GenerateRainfallMap(elevationMap)	-- Rainfall and Temperature maps created
 	--rainfallMap:Save("rainfallMap.csv")
 	
 	-- Rivers
@@ -1051,26 +1064,26 @@ function GeneratePlotTypes()
 		for x = 0,mapW - 1,1 do
 			local plot = Map.GetPlot(x,y)
 			if elevationMap:IsBelowSeaLevel(x,y) then
-				plot:SetPlotType(PlotTypes.PLOT_OCEAN, false, false)
+				plot:SetPlotType(PlotTypes.PLOT_OCEAN, false, false)		-- fill in all BelowSeaLevel as oceans
 			elseif DiffMap.data[i] < hillsThreshold then
-				plot:SetPlotType(PlotTypes.PLOT_LAND,false,false)
+				plot:SetPlotType(PlotTypes.PLOT_LAND,false,false)		-- create land
 			--This code makes the game only ever plot flat land if it's within two tiles of 
 			--the seam. This prevents issues with tiles that don't look like what they are.
 			elseif x == 0 or x == 1 or x == mapW - 1 or x == mapW -2 then
 				plot:SetPlotType(PlotTypes.PLOT_LAND,false,false)
 			-- Bobert13
-			elseif DiffMap.data[i] < mountainsThreshold then
+			elseif DiffMap.data[i] < mountainsThreshold then			-- create hills
 				plot:SetPlotType(PlotTypes.PLOT_HILLS,false,false)
 			else
-				plot:SetPlotType(PlotTypes.PLOT_MOUNTAIN,false,false)
+				plot:SetPlotType(PlotTypes.PLOT_MOUNTAIN,false,false)		-- and mountains
 			end
 			i=i+1
 		end
 	end
-	Map.RecalculateAreas()	
-	GenerateIslands(rainfallMap)
-	GenerateCoasts()
-	SetOceanRiftPlots()
+	Map.RecalculateAreas()			-- Sets areas which are used in other functions
+	GenerateIslands(rainfallMap)		-- Generate additional islands for map (currently these are set to at least > plainsPercent rain as rainfall map already done)
+	GenerateCoasts()			-- Set ocean tiles to coast if they are elegible
+	SetOceanRiftPlots()			-- make sure ocean rift coast tiles are set correctly
 end
 
 function ConnectSeasToOceans()
@@ -2344,7 +2357,7 @@ function CreateArcticOceans()
 end
 
 function CreateVerticalOceans()	
-	local oOceanRifts = Map.GetCustomOption(7)
+	local oOceanRifts = mg.oceanRiftTypes
 	local mapW, mapH = Map.GetGridSize()	
 	if oOceanRifts == 6 then
 		-- No vertical rifts
@@ -2780,10 +2793,10 @@ function AddFeatures()
 	
 	local timeStart = debugTime and os.clock() or 0
 	local desertThreshold	= rainfallMap:FindThresholdFromPercent(mg.desertPercent,false,true)
-	local plainsThreshold  =  rainfallMap:FindThresholdFromPercent(mg.plainsPercent,false,true)
-	local wetThreshold		= rainfallMap:FindThresholdFromPercent(mg.grassPercent,false,true)
+	local plainsThreshold  	= rainfallMap:FindThresholdFromPercent(mg.plainsPercent,false,true)
+	local wetThreshold	= rainfallMap:FindThresholdFromPercent(mg.grassPercent,false,true)
 	
-	for iteration = 0 , mg.featureIterations - 1 do
+	for iteration = 0 , mg.featureIterations - 1 do		-- repeat this featureIterations no. of times
 		for plotID, plot in Plots(Shuffle) do
 			Plot_AddMainFeatures(plot,desertThreshold, plainsThreshold,wetThreshold,iteration)
 		end
@@ -2821,7 +2834,7 @@ function Plot_AddMainFeatures(plot, desertThreshold, plainsThreshold, wetThresho
 	if plot:IsWater() or plot:IsMountain() then
 		return
 	end
-	if iteration == 0 then
+	if iteration == 0 then		-- these only need to happen once
 	-- Set desert rivers to floodplains
 		if plot:CanHaveFeature(FeatureTypes.FEATURE_FLOOD_PLAINS) then
 			plot:SetFeatureType(FeatureTypes.FEATURE_FLOOD_PLAINS,-1)
@@ -2876,7 +2889,7 @@ function IsGoodMarshPlot(plot,wetThreshold,plainsThreshold,desertThreshold,rain,
 		return false
 	end
 
-	local nearMouth = false
+	local nearMouth = false		-- track whether near a river end (lake or ocean)
 	if plot:IsRiverSide() then
 		odds = odds + 2 * mg.marshPercent
 	end
@@ -2895,17 +2908,17 @@ function IsGoodMarshPlot(plot,wetThreshold,plainsThreshold,desertThreshold,rain,
 	
 	end
 
-	if rain<desertThreshold then
+	if rain < desertThreshold then
 		odds = odds - 2 * mg.marshPercent
-	elseif rain>plainsThreshold then
+	elseif rain > plainsThreshold then
 		odds = odds +  mg.marshPercent
-		if rain>wetThreshold then
+		if rain > wetThreshold then
 			odds = odds +  mg.marshPercent
 		end
 	end
-	if temp<mg.tundraTemperature then
+	if temp < mg.tundraTemperature then
 		odds = odds * 0.6
-	elseif temp>mg.jungleMinTemperature then
+	elseif temp > mg.jungleMinTemperature then
 		odds = odds * 0.6
 	end
 	if nearMouth then
@@ -2935,14 +2948,14 @@ function IsGoodJunglePlot(plot,wetThreshold,plainsThreshold,desertThreshold,rain
 		end
 	end
 	if temp > mg.jungleMinTemperature then
-		odds = odds + 2 * mg.junglePercent
+		odds = odds + 3 * mg.junglePercent
 	end
 	if rain < plainsThreshold then
 		odds = odds * 0.5
 	elseif rain < wetThreshold then
 		odds = odds +  mg.junglePercent
 	else 
-		odds = odds + 2 * mg.junglePercent
+		odds = odds + 3 * mg.junglePercent
 	end
 
 	return odds >= PWRand()
@@ -3652,7 +3665,7 @@ function GenerateTempMaps(elevationMap)
 	local aboveSeaLevelMap = FloatMap:New(elevationMap.width,elevationMap.height,elevationMap.xWrap,elevationMap.yWrap)
 	for y = 0,elevationMap.height - 1 do
 		for x = 0,elevationMap.width - 1 do
-			local i = aboveSeaLevelMap:GetIndex(x,y)
+			local i = aboveSeaLevelMap:GetIndex(x,y)		-- sets amount plot is above sea level
 			if elevationMap:IsBelowSeaLevel(x,y) then
 				aboveSeaLevelMap.data[i] = 0.0
 			else
@@ -3675,9 +3688,9 @@ function GenerateTempMaps(elevationMap)
 			--print("y=" .. y ..",lat=" .. lat)
 			local latPercent = (lat - bottomTempLat)/latRange
 			--print("latPercent=" .. latPercent)
-			local temp = (math.sin(latPercent * math.pi * 2 - math.pi * 0.5) * 0.5 + 0.5)
+			local temp = (math.sin(latPercent * math.pi * 2 - math.pi * 0.5) * 0.5 + 0.5)  -- maximum at mid point between top and bottom, 0 at top and bottom.
 			if elevationMap:IsBelowSeaLevel(x,y) then
-				temp = temp * mg.maxWaterTemp + mg.minWaterTemp
+				temp = temp * mg.maxWaterTemp + mg.minWaterTemp	-- if water then modify temp by applying a minimum
 			end
 			summerMap.data[i] = temp
 		end
@@ -3697,9 +3710,9 @@ function GenerateTempMaps(elevationMap)
 			local i = winterMap:GetIndex(x,y)
 			local lat = winterMap:GetLatitudeForY(y)
 			local latPercent = (lat - bottomTempLat)/latRange
-			local temp = math.sin(latPercent * math.pi * 2 - math.pi * 0.5) * 0.5 + 0.5
+			local temp = math.sin(latPercent * math.pi * 2 - math.pi * 0.5) * 0.5 + 0.5	-- maximum at mid point between top and bottom, 0 at top and bottom.
 			if elevationMap:IsBelowSeaLevel(x,y) then
-				temp = temp * mg.maxWaterTemp + mg.minWaterTemp
+				temp = temp * mg.maxWaterTemp + mg.minWaterTemp	-- if water then modify temp by applying a minimum
 			end
 			winterMap.data[i] = temp
 		end
@@ -3712,6 +3725,7 @@ function GenerateTempMaps(elevationMap)
 		for x = 0,elevationMap.width - 1 do
 			local i = temperatureMap:GetIndex(x,y)
 			temperatureMap.data[i] = (winterMap.data[i] + summerMap.data[i]) * (1.0 - aboveSeaLevelMap.data[i])
+			-- average of summer and winter maps decreased by how high above sea level
 		end
 	end
 	temperatureMap:Normalize()
@@ -3829,6 +3843,7 @@ function GenerateRainfallMap(elevationMap)
 		local y = sortedSummerMap[i][2]
 		local pressure = sortedSummerMap[i][3]
 		DistributeRain(x,y,elevationMap,temperatureMap,summerMap,rainfallSummerMap,moistureMap,false)
+		-- distribues rain into rainfallSummerMap
 	end
 
 	local rainfallWinterMap = FloatMap:New(elevationMap.width,elevationMap.height,elevationMap.xWrap,elevationMap.yWrap)
@@ -3838,6 +3853,7 @@ function GenerateRainfallMap(elevationMap)
 		local y = sortedWinterMap[i][2]
 		local pressure = sortedWinterMap[i][3]
 		DistributeRain(x,y,elevationMap,temperatureMap,winterMap,rainfallWinterMap,moistureMap,false)
+		-- distribues rain into rainfallWinterMap
 	end
 
 	local rainfallGeostrophicMap = FloatMap:New(elevationMap.width,elevationMap.height,elevationMap.xWrap,elevationMap.yWrap)
@@ -3854,6 +3870,7 @@ function GenerateRainfallMap(elevationMap)
 --~ 			print(str)
 --~ 		end
 		DistributeRain(x,y,elevationMap,temperatureMap,geoMap,rainfallGeostrophicMap,moistureMap,true)
+		-- distribues rain into rainfallGeostropicMap
 	end
 	--zero below sea level for proper percent threshold finding
 	for y = 0,elevationMap.height - 1 do
@@ -3878,10 +3895,10 @@ function GenerateRainfallMap(elevationMap)
 	for y = 0,elevationMap.height - 1 do
 		for x = 0,elevationMap.width - 1 do
 			local i = elevationMap:GetIndex(x,y)
-			rainfallMap.data[i] =  rainfallSummerMap.data[i] +   rainfallWinterMap.data[i] + 0 * (rainfallGeostrophicMap.data[i] * mg.geostrophicFactor)
+			rainfallMap.data[i] =  rainfallSummerMap.data[i] +   rainfallWinterMap.data[i] + (rainfallGeostrophicMap.data[i] * mg.geostrophicFactor) -- (geostopicFactor = 0 currently)
 		end
 	end
-	--rainfallMap:Smooth(mg.RainfallBlendRange)
+	--rainfallMap:Smooth(mg.RainfallBlendRange) 	-- Blending had strange effects
 	rainfallMap:Normalize()
 
 	return rainfallMap, temperatureMap
@@ -3890,11 +3907,11 @@ end
 function DistributeRain(x,y,elevationMap,temperatureMap,pressureMap,rainfallMap,moistureMap,boolGeostrophic)
 
 	local i = elevationMap:GetIndex(x,y)
-	local upLiftSource = math.max(0.1,pressureMap.data[i])
+	local upLiftSource = math.max(0.05,pressureMap.data[i])
 	--local str = string.format("geo=%s,x=%d, y=%d, srcPressure uplift = %f, upliftSource = %f",tostring(boolGeostrophic),x,y,math.pow(pressureMap.data[i],mg.upLiftExponent),upLiftSource)
 	--print(str)
 	if elevationMap:IsBelowSeaLevel(x,y) then
-		moistureMap.data[i] = moistureMap.data[i] + temperatureMap.data[i]
+		moistureMap.data[i] = moistureMap.data[i] + temperatureMap.data[i] -- Oceans create additional mositure depending on temp
 		--print("water tile = true")
 	end
 	--if debugTime then print(string.format("moistureMap.data[i] = %f",moistureMap.data[i])) end
@@ -3919,25 +3936,24 @@ function DistributeRain(x,y,elevationMap,temperatureMap,pressureMap,rainfallMap,
 		for dir = 0, 5 do
 			local xx,yy = elevationMap:GetNeighbor(x,y,dir)
 			local ii = elevationMap:GetIndex(xx,yy)
-			if ii >= 0 and pressureMap.data[i] >= pressureMap.data[ii] then
-				table.insert(nList,{xx,yy})
+			if ii >= 0 and pressureMap.data[i] >= pressureMap.data[ii] then	-- if temp of adjacent tile is lower (or equal)
+				table.insert(nList,{xx,yy})				-- add it to list of neighbours to pass moisture to
 			end
 		end
 	end
-	if #nList == 0 or boolGeostrophic and #nList == 1 then
+	if #nList == 0 or boolGeostrophic and #nList == 1 then		-- if no neighbours to pass to
 		local cost = moistureMap.data[i]
 		--local cost = 0
-		rainfallMap.data[i] = cost
+		rainfallMap.data[i] = cost				-- drop all moisture
 		return
 	end
-	local moisturePerNeighbor = moistureMap.data[i]/#nList
-	--drop rain and pass moisture to neighbors
+	local moisturePerNeighbor = moistureMap.data[i]/#nList		-- divide moistue up between tiles it will be passed to
 	for n = 1,#nList do
 		local xx = nList[n][1]
 		local yy = nList[n][2]
 		local ii = elevationMap:GetIndex(xx,yy)
-		local upLiftDest = math.max(0.1,pressureMap.data[ii])
-		local cost = GetRainCost(upLiftSource,upLiftDest)
+		local upLiftDest = math.max(0.05,pressureMap.data[ii])
+		local cost = GetRainCost(upLiftSource,upLiftDest)  -- gives a percent of available moisture to drop
 		local bonus = 0.0
 		if (elevationMap:GetZone(y) == mg.NPOLAR or elevationMap:GetZone(y) == mg.SPOLAR) then
 			bonus = mg.polarRainBoost
@@ -3951,18 +3967,18 @@ function DistributeRain(x,y,elevationMap,temperatureMap,pressureMap,rainfallMap,
 		end
 		--if debugTime then print(string.format("---xx=%d, yy=%d, destPressure uplift = %f, upLiftDest = %f, cost = %f, moisturePerNeighbor = %f, bonus = %f",xx,yy,math.pow(pressureMap.data[ii],mg.upLiftExponent),upLiftDest,cost,moisturePerNeighbor,bonus)) end
 		
-		rainfallMap.data[i] = rainfallMap.data[i] + cost * moisturePerNeighbor + bonus
+		rainfallMap.data[i] = rainfallMap.data[i] + cost * moisturePerNeighbor + bonus	-- drop percentage of moisture
 		
 		--pass to neighbor.
 		--if debugTime then print(string.format("---moistureMap.data[ii] = %f",moistureMap.data[ii])) end
 		
 		if elevationMap:IsBelowSeaLevel(x,y) then
 			moistureMap.data[ii] = math.max(moistureMap.data[ii] + moisturePerNeighbor - (cost * moisturePerNeighbor),moistureMap.data[ii])
-
+			-- if below sea, pass on remaining moiture after rain dropped
 		else
 
-		moistureMap.data[ii] = math.max(moistureMap.data[ii] + moisturePerNeighbor - (1 - mg.pickUpModifier * temperatureMap.data[i]) * (cost * moisturePerNeighbor),moistureMap.data[ii])
-
+			moistureMap.data[ii] = math.max(moistureMap.data[ii] + moisturePerNeighbor - (1 - mg.pickUpModifier * temperatureMap.data[i]) * (cost * moisturePerNeighbor),moistureMap.data[ii])
+			-- if above sea, pass on remaining moisture + pickUpModifier * rain dropped
 		end
 		--if debugTime then print(string.format("---dropping %f rain",cost * moisturePerNeighbor + bonus)) end
 		--if debugTime then print(string.format("---passing on %f moisture",moisturePerNeighbor - (cost * moisturePerNeighbor))) end
@@ -3972,6 +3988,7 @@ end
 
 function GetRainCost(upLiftSource,upLiftDest)
 	local cost =  mg.minimumRainCost + mg.rainfallMultiplier * ( (upLiftSource - upLiftDest)/upLiftSource)
+	-- minimumRainCost + multiplier * percent change in pressure
 	if cost < 0.0 then
 		cost = 0.0
 	end
@@ -8246,10 +8263,10 @@ function AssignStartingPlots:PlaceBonusResources()
 	
 	resources_to_place = {
 	{self.deer_ID, 1, 100, 0, 1} };
-	self:ProcessResourceList(14 * resMultiplier, 3, self.extra_deer_list, resources_to_place)
-	self:ProcessResourceList(14 * resMultiplier, 3, self.tundra_flat_including_forests, resources_to_place)
+	self:ProcessResourceList(15 * resMultiplier, 3, self.extra_deer_list, resources_to_place)
+	self:ProcessResourceList(15 * resMultiplier, 3, self.tundra_flat_including_forests, resources_to_place)
 	self:ProcessResourceList(18 * resMultiplier, 3, self.forest_flat_that_are_not_tundra, resources_to_place)
-	self:ProcessResourceList(20 * resMultiplier, 3, self.hills_forest_list, resources_to_place)
+	self:ProcessResourceList(21 * resMultiplier, 3, self.hills_forest_list, resources_to_place)
 	
 	resources_to_place = {
 	{self.wheat_ID, 1, 100, 0, 1} };
@@ -8282,10 +8299,10 @@ function AssignStartingPlots:PlaceBonusResources()
 
 	resources_to_place = {
 	{self.stone_ID, 1, 100, 0, 1} };
-	self:ProcessResourceList(27 * resMultiplier, 3,self.flat_open_no_tundra_no_desert, resources_to_place)
-	self:ProcessResourceList(20 * resMultiplier, 3, self.tundra_flat_no_feature, resources_to_place)
+	self:ProcessResourceList(30 * resMultiplier, 3,self.flat_open_no_tundra_no_desert, resources_to_place)
+	self:ProcessResourceList(25 * resMultiplier, 3, self.tundra_flat_no_feature, resources_to_place)
 	self:ProcessResourceList(7 * resMultiplier, 3, self.desert_flat_no_feature, resources_to_place)
-	self:ProcessResourceList(25 * resMultiplier, 3, self.marsh_list, resources_to_place)
+	self:ProcessResourceList(30 * resMultiplier, 3, self.marsh_list, resources_to_place)
 	self:ProcessResourceList(9 * resMultiplier, 3, self.snow_flat_list, resources_to_place)
 	self:ProcessResourceList(45 * resMultiplier, 3, self.marble_list, resources_to_place)
 
